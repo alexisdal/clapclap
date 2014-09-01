@@ -1,0 +1,6 @@
+# Visual Studio crap
+/cs/obj
+*.suo
+*.pdb
+*.obj
+*.vshost.exe*
