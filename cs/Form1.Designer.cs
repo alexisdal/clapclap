@@ -138,7 +138,7 @@
             this.listenTextBox.Name = "listenTextBox";
             this.listenTextBox.Size = new System.Drawing.Size(49, 22);
             this.listenTextBox.TabIndex = 1;
-            this.listenTextBox.Text = "100";
+            this.listenTextBox.Text = "50";
             // 
             // volumeLabel
             // 
@@ -179,7 +179,7 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.volumeLabel);
             this.Controls.Add(this.label1);
-            this.Name = "ClapClap";
+            this.Name = "Form1";
             this.Text = "ClapClap";
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.ResumeLayout(false);

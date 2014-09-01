@@ -12,10 +12,7 @@ namespace clap_clap
     public partial class Form1 : Form
     {
         SoundRecorder rec;
-
-        private System.Collections.Generic.SynchronizedCollection<double> volumes; // in System.ServiceModel.dll; provides threadsafe collection
-        private volatile short volumeIndex;
-        private short totalVolumes;
+        VolumeMonitor mon;
 
         // lowest possible sound value is
         // 20 * log10(1/32768f)
@@ -25,6 +22,8 @@ namespace clap_clap
         // but it also depends on ambient sound...
         // hardcoded values then
         private int lowestSoundVolume = -25;
+
+        private double[] toDisplay;
 
         public Form1()
         {
@@ -36,20 +35,27 @@ namespace clap_clap
             rec = new SoundRecorder();
             rec.VolumeChanged += OnVolumeChanged;
 
+            short totalVolumes = 100;
+            mon = new VolumeMonitor(totalVolumes);
+            toDisplay = new double[totalVolumes];
+
+
             progressBar1.Minimum = 0;
             progressBar1.Maximum = -lowestSoundVolume;
 
-            totalVolumes = 100;
-            volumes = new System.Collections.Generic.SynchronizedCollection<double>();
             chart1.Series["volumes"].ChartType =
                 System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
+            //chart1.Series["volumes"].Points.DataBindY(toDisplay); 
 
             PopulateComboBox(rec.GetRecordingDevices());
 
+            ToggleRecording();
 
         }
 
-        private void play_Click(object sender, EventArgs e)
+        private void play_Click(object sender, EventArgs e) { ToggleRecording(); }
+
+        private void ToggleRecording()
         {
             if (rec.IsRecording())
             {
@@ -61,7 +67,7 @@ namespace clap_clap
             {
                 // let's (re)start 
                 EnableParams(false);
-                FlushVolumes();
+                mon.Flush();
                 rec.SetRecordingDevice((string)soundDevicesComboBox.SelectedItem);
                 rec.SetBufferProperties(
                     int.Parse(bufferLengthLabel.Text) / 1000.0,
@@ -73,45 +79,30 @@ namespace clap_clap
             
         }
 
-        private void FlushVolumes()
-        {
-            volumes.Clear();
-            for (int i = 0 ; i < totalVolumes ; i++)  volumes.Add(lowestSoundVolume);
-            volumeIndex = 0;
-        }
-
         private void OnVolumeChanged(SoundRecorder rec, VolumeChangedEvent e)
         {
+            mon.SetCurrentVolume(e.volume);
+            // refresh progress bar
             progressBar1.BeginInvoke(new Action(() => { 
                 int value = (int)e.volume;
                 if (value > 0) value = 0;
                 if (value < lowestSoundVolume) value = lowestSoundVolume;
                 progressBar1.Value = -lowestSoundVolume + value; 
             }));
+
+            // refresh label
             volumeLabel.BeginInvoke(new Action(() => { volumeLabel.Text = "" + e.volume; })); 
-            volumeIndex++;
-            if (volumeIndex >= totalVolumes) volumeIndex = 0;
-            volumes[volumeIndex] = e.volume;
             
+            // refresh plots
             chart1.BeginInvoke(new Action(() => {
-                //chart1.Series["volumes"].Points.DataBindY(volumes); // ugly display
-                //chart1.Series["volumes"].Points.ele = new System.Windows.Forms.DataVisualization.Charting.Series
-                //int offset = volumeIndex;
-                //for (int i = 0 ; i < totalVolumes ; i++) 
-                //{
-                //    int j = offset - i; if (j < 0) j = totalVolumes - j;
-                //    //chart1.Series["volumes"].Points[i].SetValueY(-volumes[j]); 
-                //    double[] p = { 0, volumes[j] };
-                //    chart1.Series["volumes"].Points.ElementAt(i).YValues = p; 
-                //} // doesnt work
-                double[] toDisplay = new double[totalVolumes];
-                int offset = volumeIndex;
-                for (int i = 0; i < totalVolumes; i++)
+                int volumeIndex = mon.volumeIndex;
+                int totalVolumes = mon.totalVolumes;
+                for (int i = 0; i < toDisplay.Length; i++)
                 {
-                    int j = offset - i; if (j < 0) j = totalVolumes + j;
-                    toDisplay[i] = volumes[j];
+                    int j = volumeIndex - i; if (j < 0) j = totalVolumes + j;
+                    toDisplay[i] = mon.volumes[j];
                 }
-                chart1.Series["volumes"].Points.DataBindY(toDisplay); // ugly display
+                chart1.Series["volumes"].Points.DataBindY(toDisplay); 
                 
             }));
 
