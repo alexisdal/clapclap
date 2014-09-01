@@ -13,7 +13,10 @@ namespace clap_clap
     {
         SoundRecorder rec;
 
-        
+        private System.Collections.Generic.SynchronizedCollection<double> volumes; // in System.ServiceModel.dll; provides threadsafe collection
+        private volatile short volumeIndex;
+        private short totalVolumes;
+
         // lowest possible sound value is
         // 20 * log10(1/32768f)
         // = -90.3089987
@@ -36,6 +39,10 @@ namespace clap_clap
             progressBar1.Minimum = 0;
             progressBar1.Maximum = -lowestSoundVolume;
 
+            totalVolumes = 100;
+            volumes = new System.Collections.Generic.SynchronizedCollection<double>();
+            chart1.Series["volumes"].ChartType =
+                System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
 
             PopulateComboBox(rec.GetRecordingDevices());
 
@@ -54,6 +61,7 @@ namespace clap_clap
             {
                 // let's (re)start 
                 EnableParams(false);
+                FlushVolumes();
                 rec.SetRecordingDevice((string)soundDevicesComboBox.SelectedItem);
                 rec.SetBufferProperties(
                     int.Parse(bufferLengthLabel.Text) / 1000.0,
@@ -65,6 +73,13 @@ namespace clap_clap
             
         }
 
+        private void FlushVolumes()
+        {
+            volumes.Clear();
+            for (int i = 0 ; i < totalVolumes ; i++)  volumes.Add(lowestSoundVolume);
+            volumeIndex = 0;
+        }
+
         private void OnVolumeChanged(SoundRecorder rec, VolumeChangedEvent e)
         {
             progressBar1.BeginInvoke(new Action(() => { 
@@ -74,7 +89,31 @@ namespace clap_clap
                 progressBar1.Value = -lowestSoundVolume + value; 
             }));
             volumeLabel.BeginInvoke(new Action(() => { volumeLabel.Text = "" + e.volume; })); 
+            volumeIndex++;
+            if (volumeIndex >= totalVolumes) volumeIndex = 0;
+            volumes[volumeIndex] = e.volume;
             
+            chart1.BeginInvoke(new Action(() => {
+                //chart1.Series["volumes"].Points.DataBindY(volumes); // ugly display
+                //chart1.Series["volumes"].Points.ele = new System.Windows.Forms.DataVisualization.Charting.Series
+                //int offset = volumeIndex;
+                //for (int i = 0 ; i < totalVolumes ; i++) 
+                //{
+                //    int j = offset - i; if (j < 0) j = totalVolumes - j;
+                //    //chart1.Series["volumes"].Points[i].SetValueY(-volumes[j]); 
+                //    double[] p = { 0, volumes[j] };
+                //    chart1.Series["volumes"].Points.ElementAt(i).YValues = p; 
+                //} // doesnt work
+                double[] toDisplay = new double[totalVolumes];
+                int offset = volumeIndex;
+                for (int i = 0; i < totalVolumes; i++)
+                {
+                    int j = offset - i; if (j < 0) j = totalVolumes + j;
+                    toDisplay[i] = volumes[j];
+                }
+                chart1.Series["volumes"].Points.DataBindY(toDisplay); // ugly display
+                
+            }));
 
         }
 
@@ -96,14 +135,13 @@ namespace clap_clap
             bool found = false;
             foreach (string value in values) { 
                 soundDevicesComboBox.Items.Add(value);
-                // select default card if it exists
+                // on sélectionne ma carte si elle existe
                 found = found || (value == defaultRecorder);
             }
 
             if (found) soundDevicesComboBox.SelectedItem = defaultRecorder;
             else soundDevicesComboBox.SelectedItem = values[0];
         }
-
 
 
 

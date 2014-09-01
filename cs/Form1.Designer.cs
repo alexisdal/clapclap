@@ -28,6 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.label1 = new System.Windows.Forms.Label();
             this.bufferLengthLabel = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -40,6 +42,8 @@
             this.play = new System.Windows.Forms.Button();
             this.listenTextBox = new System.Windows.Forms.TextBox();
             this.volumeLabel = new System.Windows.Forms.Label();
+            this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -144,11 +148,25 @@
             this.volumeLabel.Size = new System.Drawing.Size(0, 17);
             this.volumeLabel.TabIndex = 0;
             // 
+            // chart1
+            // 
+            chartArea1.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea1);
+            this.chart1.Location = new System.Drawing.Point(12, 183);
+            this.chart1.Name = "chart1";
+            series1.ChartArea = "ChartArea1";
+            series1.Name = "volumes";
+            this.chart1.Series.Add(series1);
+            this.chart1.Size = new System.Drawing.Size(431, 129);
+            this.chart1.TabIndex = 6;
+            this.chart1.Text = "chart1";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(455, 187);
+            this.ClientSize = new System.Drawing.Size(455, 324);
+            this.Controls.Add(this.chart1);
             this.Controls.Add(this.play);
             this.Controls.Add(this.soundDevicesComboBox);
             this.Controls.Add(this.progressBar1);
@@ -161,8 +179,9 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.volumeLabel);
             this.Controls.Add(this.label1);
-            this.Name = "Form1";
-            this.Text = "Form1";
+            this.Name = "ClapClap";
+            this.Text = "ClapClap";
+            ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -182,6 +201,7 @@
         private System.Windows.Forms.Button play;
         private System.Windows.Forms.TextBox listenTextBox;
         private System.Windows.Forms.Label volumeLabel;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
     }
 }
 
