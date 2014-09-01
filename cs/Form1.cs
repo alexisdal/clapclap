@@ -23,7 +23,8 @@ namespace clap_clap
         // hardcoded values then
         private int lowestSoundVolume = -25;
 
-        private double[] toDisplay;
+        private double[] displayedVolumes;
+        private double[] displayedClaps;
 
         public Form1()
         {
@@ -37,7 +38,10 @@ namespace clap_clap
 
             short totalVolumes = 100;
             mon = new VolumeMonitor(totalVolumes);
-            toDisplay = new double[totalVolumes];
+            mon.ClapHandle += OnClapReceived;
+
+            displayedVolumes = new double[totalVolumes];
+            displayedClaps = new double[totalVolumes];
 
 
             progressBar1.Minimum = 0;
@@ -45,7 +49,8 @@ namespace clap_clap
 
             chart1.Series["volumes"].ChartType =
                 System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
-            //chart1.Series["volumes"].Points.DataBindY(toDisplay); 
+            chart1.Series["claps"].ChartType =
+                System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastPoint;
 
             PopulateComboBox(rec.GetRecordingDevices());
 
@@ -71,17 +76,26 @@ namespace clap_clap
                 rec.SetRecordingDevice((string)soundDevicesComboBox.SelectedItem);
                 rec.SetBufferProperties(
                     int.Parse(bufferLengthLabel.Text) / 1000.0,
-                    int.Parse(listenTextBox.Text) / 1000.0,
-                    (double)decimal.Parse(upperBoundTextBox.Text, System.Globalization.CultureInfo.InvariantCulture),
-                    (double)decimal.Parse(lowerBoundTextBox.Text, System.Globalization.CultureInfo.InvariantCulture));
+                    int.Parse(listenTextBox.Text) / 1000.0);
+                mon.clapThreshold = (double)decimal.Parse(clapThresholdTextBox.Text, System.Globalization.CultureInfo.InvariantCulture);
+                mon.silenceThreshold = (double)decimal.Parse(silenceThresholdTextBox.Text, System.Globalization.CultureInfo.InvariantCulture);
+                mon.risingEdgeThresholdInMilliSeconds = int.Parse(riseTextBox.Text);
+                mon.Flush();
                 rec.StartRecording();
             }
             
         }
 
+        private void OnClapReceived(VolumeMonitor mon, ClapEvent e)
+        {
+            logTextBox.BeginInvoke(new Action(() => {
+                string msg = (e.elapsedMilliSeconds/1000.0).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) + " clap !";
+                logTextBox.Text = msg + "\r\n" + logTextBox.Text;
+            }));
+        }
         private void OnVolumeChanged(SoundRecorder rec, VolumeChangedEvent e)
         {
-            mon.SetCurrentVolume(e.volume);
+            mon.SetCurrentVolume(e.volume, e.elapsedMilliSeconds);
             // refresh progress bar
             progressBar1.BeginInvoke(new Action(() => { 
                 int value = (int)e.volume;
@@ -97,12 +111,15 @@ namespace clap_clap
             chart1.BeginInvoke(new Action(() => {
                 int volumeIndex = mon.volumeIndex;
                 int totalVolumes = mon.totalVolumes;
-                for (int i = 0; i < toDisplay.Length; i++)
+                for (int i = 0; i < displayedVolumes.Length; i++)
                 {
                     int j = volumeIndex - i; if (j < 0) j = totalVolumes + j;
-                    toDisplay[i] = mon.volumes[j];
+                    displayedVolumes[i] = mon.volumes[j];
+                    displayedClaps[i] = mon.claps[j] == 0.0 ? double.NaN : 0.0;
+                    
                 }
-                chart1.Series["volumes"].Points.DataBindY(toDisplay); 
+                chart1.Series["volumes"].Points.DataBindY(displayedVolumes);
+                chart1.Series["claps"].Points.DataBindY(displayedClaps); 
                 
             }));
 
@@ -111,9 +128,11 @@ namespace clap_clap
         private void EnableParams(bool enable)
         {
             play.Text = enable ? "record" : "stop";
+            if (enable) logTextBox.Text = "-------------------------\r\n" + logTextBox.Text;
             listenTextBox.Enabled = enable;
-            lowerBoundTextBox.Enabled = enable;
-            upperBoundTextBox.Enabled = enable;
+            silenceThresholdTextBox.Enabled = enable;
+            clapThresholdTextBox.Enabled = enable;
+            riseTextBox.Enabled = enable;
             volumeLabel.Text = "";
             soundDevicesComboBox.Enabled = enable;
         }

@@ -15,11 +15,11 @@ namespace clap_clap
 
     // to handle events
     // typically sound volume changed
-    class VolumeChangedEvent : EventArgs { public double volume { get; set; } };
+    class VolumeChangedEvent : EventArgs { public double volume { get; set; } public long elapsedMilliSeconds { get; set; }  };
     
     class SoundRecorder
     {
-        // pour publier des events de progress
+        // to publish volume changed events 
         public delegate void VolumeHandler(SoundRecorder rec, VolumeChangedEvent e);
         public event VolumeHandler VolumeChanged;
         
@@ -32,8 +32,8 @@ namespace clap_clap
         private double bufferDurationInSeconds = 0;
 
         private double volume; 
-        private short upperBound;
-        private short lowerBound;
+        //private short upperBound;
+        //private short lowerBound;
         private double volumeWindowDurationInSeconds;
 
         private Stopwatch watch;
@@ -46,20 +46,14 @@ namespace clap_clap
         public SoundRecorder() { 
             //default values
             watch = new Stopwatch();
-            SetBufferProperties(5.0, 1.0, 0.05, 0.95); 
+            SetBufferProperties(5.0, 1.0); 
         }
 
-        public void SetBufferProperties(double bufferDurationInSeconds, double volumeWindowDurationInSeconds,
-            double upperBoundPercentage,  double lowerBoundPercentage )
+        public void SetBufferProperties(double bufferDurationInSeconds, double volumeWindowDurationInSeconds)
         {
-            // between 01sec et 30sec
+            // between 01sec and 30sec
             bufferDurationInSeconds = bufferDurationInSeconds > 30 ? 30 : bufferDurationInSeconds;
             bufferDurationInSeconds = bufferDurationInSeconds < 1 ? 1 : bufferDurationInSeconds;
-            // between 0 -> 1 sec
-            upperBoundPercentage = (upperBoundPercentage < 0 ? 0 : upperBoundPercentage);
-            upperBoundPercentage = (upperBoundPercentage > 1 ? 1 : upperBoundPercentage);
-            lowerBoundPercentage = (lowerBoundPercentage < 0 ? 0 : lowerBoundPercentage);
-            lowerBoundPercentage = (lowerBoundPercentage > 1 ? 1 : lowerBoundPercentage);
 
             // let's say at least 10 samples. at 8000Hz : 10/8000 => 0.00125sec
             volumeWindowDurationInSeconds = volumeWindowDurationInSeconds < 0.00125 ? 0.00125 : volumeWindowDurationInSeconds;
@@ -73,8 +67,6 @@ namespace clap_clap
             recordedSamples = new short[(int)(sampleRate * bufferDurationInSeconds)]; // c# silently initializes to zero
             lastSampleId = 0; // start at zero pls
 
-            upperBound = (short)(upperBoundPercentage * 32768f);
-            lowerBound = (short)(lowerBoundPercentage * 32768f);
             this.volumeWindowDurationInSeconds = volumeWindowDurationInSeconds;
             if (wasrecording) StartRecording();
         }
@@ -203,7 +195,9 @@ namespace clap_clap
         private void CheckBounds(long elapsedMilliseconds)
         {
             // send news to UI
-            VolumeChangedEvent e = new VolumeChangedEvent(); e.volume = volume;
+            VolumeChangedEvent e = new VolumeChangedEvent(); 
+            e.volume = volume;
+            e.elapsedMilliSeconds = watch.ElapsedMilliseconds;
             if (VolumeChanged != null) VolumeChanged(this, e);
         }
 
