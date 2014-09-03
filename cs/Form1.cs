@@ -90,9 +90,11 @@ namespace clap_clap
         private void OnClapReceived(VolumeMonitor mon, ClapEvent e)
         {
             logTextBox.BeginInvoke(new Action(() => {
+                
                 string msg = (e.elapsedMilliSeconds / 1000.0).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
                     + " => " + e.numConsecutiveClaps + " claps";
-                logTextBox.Text = msg + "\r\n" + logTextBox.Text;
+
+                logTextBox.Text = msg + "\r\n" + (e.numConsecutiveClaps == 1 ? "---------------\r\n":"") + logTextBox.Text;
             }));
         }
         private void OnVolumeChanged(SoundRecorder rec, VolumeChangedEvent e)
@@ -130,7 +132,7 @@ namespace clap_clap
         private void EnableParams(bool enable)
         {
             play.Text = enable ? "record" : "stop";
-            if (enable) logTextBox.Text = "-------------------------\r\n" + logTextBox.Text;
+            if (enable) logTextBox.Text = "";
             listenTextBox.Enabled = enable;
             silenceThresholdTextBox.Enabled = enable;
             clapThresholdTextBox.Enabled = enable;
