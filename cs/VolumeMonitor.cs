@@ -5,7 +5,10 @@ using System.Text;
 
 namespace clap_clap
 {
-    class ClapEvent : EventArgs { public long elapsedMilliSeconds { get; set; } };
+    class ClapEvent : EventArgs {
+        public long elapsedMilliSeconds { get; set; }
+        public int numConsecutiveClaps { get; set; }
+    };
 
     class VolumeMonitor
     {
@@ -22,8 +25,11 @@ namespace clap_clap
         public double silenceThreshold;
 
         public int risingEdgeThresholdInMilliSeconds;
+        public int maximumDelayBetweenConsecutiveClapsInMilliSeconds;
 
         private long lastSilenceInMilliSeconds;
+        private long lastClapInMilliSeconds;
+        private int numConsecutiveClaps;
 
         enum Status
         {
@@ -33,13 +39,15 @@ namespace clap_clap
         };
         private Status lastStatus;
         
-        public VolumeMonitor(short totalVolumes, double clapThreshold = -0.1, 
-            double silenceThreshold = -20, int risingEdgeThresholdInMilliSeconds = 1000) 
+        public VolumeMonitor(short totalVolumes, double clapThreshold = -0.1, double silenceThreshold = -20, 
+            int risingEdgeThresholdInMilliSeconds = 1000,
+            int maximumDelayBetweenConsecutiveClapsInMilliSeconds = 1000) 
         {
             this.totalVolumes = totalVolumes;
             this.clapThreshold = clapThreshold;
             this.silenceThreshold = silenceThreshold;
             this.risingEdgeThresholdInMilliSeconds = risingEdgeThresholdInMilliSeconds;
+            this.maximumDelayBetweenConsecutiveClapsInMilliSeconds = maximumDelayBetweenConsecutiveClapsInMilliSeconds;
             volumes = new System.Collections.Generic.SynchronizedCollection<double>();
             claps = new System.Collections.Generic.SynchronizedCollection<double>();
             Flush();
@@ -52,7 +60,9 @@ namespace clap_clap
             for (int i = 0; i < totalVolumes; i++) { volumes.Add(0); claps.Add(0); }
             volumeIndex = 0;
             lastStatus = Status.Silence;
-            lastSilenceInMilliSeconds = -1;
+            lastSilenceInMilliSeconds = -risingEdgeThresholdInMilliSeconds;
+            lastClapInMilliSeconds = - maximumDelayBetweenConsecutiveClapsInMilliSeconds;
+            numConsecutiveClaps = 1;
         }
 
         public void SetCurrentVolume(double volume, long elapsedMilliSeconds)
@@ -62,7 +72,6 @@ namespace clap_clap
             volumes[volumeIndex] = volume;
 
             CheckBounds(elapsedMilliSeconds);
-
 
         }
 
@@ -85,9 +94,16 @@ namespace clap_clap
             {
                 // this is a clap!
                 claps[volumeIndex] = 1;
+
+                // it follows the previous clap if it occurs before maximumDelayBetweenConsecutiveClapsInMilliSeconds
+                bool isConsecutive = (elapsedMilliseconds - lastClapInMilliSeconds < maximumDelayBetweenConsecutiveClapsInMilliSeconds);
+                numConsecutiveClaps = isConsecutive ? numConsecutiveClaps + 1 : 1;
                 // send news to UI
-                ClapEvent e = new ClapEvent(); e.elapsedMilliSeconds = elapsedMilliseconds;
+                ClapEvent e = new ClapEvent(); 
+                e.elapsedMilliSeconds = elapsedMilliseconds;
+                e.numConsecutiveClaps = numConsecutiveClaps;
                 if (ClapHandle != null) ClapHandle(this, e);
+                lastClapInMilliSeconds = elapsedMilliseconds;
             }
             lastStatus = currentStatus;
 

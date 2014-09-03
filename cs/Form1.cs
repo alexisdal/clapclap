@@ -80,6 +80,7 @@ namespace clap_clap
                 mon.clapThreshold = (double)decimal.Parse(clapThresholdTextBox.Text, System.Globalization.CultureInfo.InvariantCulture);
                 mon.silenceThreshold = (double)decimal.Parse(silenceThresholdTextBox.Text, System.Globalization.CultureInfo.InvariantCulture);
                 mon.risingEdgeThresholdInMilliSeconds = int.Parse(riseTextBox.Text);
+                mon.maximumDelayBetweenConsecutiveClapsInMilliSeconds = int.Parse(maxDelayTextBox.Text);
                 mon.Flush();
                 rec.StartRecording();
             }
@@ -89,7 +90,8 @@ namespace clap_clap
         private void OnClapReceived(VolumeMonitor mon, ClapEvent e)
         {
             logTextBox.BeginInvoke(new Action(() => {
-                string msg = (e.elapsedMilliSeconds/1000.0).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) + " clap !";
+                string msg = (e.elapsedMilliSeconds / 1000.0).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                    + " => " + e.numConsecutiveClaps + " claps";
                 logTextBox.Text = msg + "\r\n" + logTextBox.Text;
             }));
         }
@@ -133,6 +135,7 @@ namespace clap_clap
             silenceThresholdTextBox.Enabled = enable;
             clapThresholdTextBox.Enabled = enable;
             riseTextBox.Enabled = enable;
+            maxDelayTextBox.Enabled = enable;
             volumeLabel.Text = "";
             soundDevicesComboBox.Enabled = enable;
         }
