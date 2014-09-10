@@ -15,9 +15,9 @@ namespace clap_clap
 
     // to handle events
     // typically sound volume changed
-    class VolumeChangedEvent : EventArgs { public double volume { get; set; } public long elapsedMilliSeconds { get; set; }  };
+    public class VolumeChangedEvent : EventArgs { public double volume { get; set; } public long elapsedMilliSeconds { get; set; }  };
     
-    class SoundRecorder
+    public class SoundRecorder
     {
         // to publish volume changed events 
         public delegate void VolumeHandler(SoundRecorder rec, VolumeChangedEvent e);

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clap-clap", "clap-clap.csproj", "{7CFD4EF8-E0FE-4641-83C9-A89C7AE8992A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clap-clap_winform", "clap-clap_winform.csproj", "{7CFD4EF8-E0FE-4641-83C9-A89C7AE8992A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

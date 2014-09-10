@@ -5,12 +5,12 @@ using System.Text;
 
 namespace clap_clap
 {
-    class ClapEvent : EventArgs {
+    public class ClapEvent : EventArgs {
         public long elapsedMilliSeconds { get; set; }
         public int numConsecutiveClaps { get; set; }
     };
 
-    class VolumeMonitor
+    public class VolumeMonitor
     {
         // to publish volume changed events 
         public delegate void ClapHandler(VolumeMonitor mon, ClapEvent e);
