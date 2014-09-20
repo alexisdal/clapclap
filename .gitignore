@@ -6,3 +6,4 @@ obj
 *.vshost.exe*
 *.flac
 *.wav
+rpi/mykey.txt
