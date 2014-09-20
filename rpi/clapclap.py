@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # to call third party program
-import sys	
+import sys  
 import subprocess
 
 # regular expressions
